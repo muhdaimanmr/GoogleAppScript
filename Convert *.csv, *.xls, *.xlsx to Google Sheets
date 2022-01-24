@@ -1,0 +1,33 @@
+function myConvertFunction() {
+
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.setActiveSheet(ss.getSheetByName("Convert")); //Sheet Name
+  //var sheet = SpreadsheetApp.getActiveSheet();
+
+  var sourceFolderId = ss.getRange("C2").getValue();
+  var destinationFolderId = ss.getRange("C3").getValue()
+
+  var getFileIds = function (folder, fileList, q) {
+    var files = folder.searchFiles(q);
+    while (files.hasNext()) {
+      var f = files.next();
+      fileList.push({id: f.getId(), fileName: f.getName().split(".")[0].trim()});
+    }
+    var folders = folder.getFolders();
+    while (folders.hasNext()) getFileIds(folders.next(), fileList, q);
+    return fileList;
+  };
+  var sourceFiles = getFileIds(DriveApp.getFolderById(sourceFolderId), [], "mimeType='" + MimeType.MICROSOFT_EXCEL + "' or mimeType='" + MimeType.MICROSOFT_EXCEL_LEGACY + "'");
+  var destinationFiles = getFileIds(DriveApp.getFolderById(destinationFolderId), [], "mimeType='" + MimeType.GOOGLE_SHEETS + "'");
+  var createFiles = sourceFiles.filter(function(e) {return destinationFiles.every(function(f) {return f.fileName !== e.fileName});});
+  var updateFiles = sourceFiles.reduce(function(ar, e) {
+    var dst = destinationFiles.filter(function(f) {return f.fileName === e.fileName});
+    if (dst.length > 0) {
+      e.to = dst[0].id;
+      ar.push(e);
+    }
+    return ar;
+  }, []);
+  if (createFiles.length > 0) createFiles.forEach(function(e) {Drive.Files.insert({mimeType: MimeType.GOOGLE_SHEETS, parents: [{id: destinationFolderId}], title: e.fileName}, DriveApp.getFileById(e.id))});
+  if (updateFiles.length > 0) updateFiles.forEach(function(e) {Drive.Files.update({}, e.to, DriveApp.getFileById(e.id))});
+}
