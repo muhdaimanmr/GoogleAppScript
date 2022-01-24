@@ -1,0 +1,36 @@
+// Get List of CSV Files
+function listFilesInFolder(id) {
+  
+  // get folder id
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.setActiveSheet(ss.getSheetByName("Download File in CSV")); // sheets name
+  
+  var folderId = ss.getRange("C2").getValue(); // value with google drive folder
+  
+  // get files information and CSV file download link
+  var folder = DriveApp.getFolderById(folderId);
+  var contents = folder.getFiles();
+  var file;
+  var name;
+  var url;
+  var id;
+
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("List of CSV File") // sheets name
+  
+  sheet.clear();
+  sheet.appendRow(["Name", "URL", "ID", "Download Link"]); // list of information
+
+  while(contents.hasNext()) {
+    file = contents.next();
+    name = file.getName();
+    url = file.getUrl();
+    id = file.getId();
+
+    data = [name, url, id]
+    sheet.appendRow(data);
+  }
+
+  sheet.getRange('D2').activate();
+  sheet.getCurrentCell().setFormula('=ARRAYFORMULA(IF(A2:A = "" , "" , "https://docs.google.com/spreadsheets/d/"&C2:C&"/export?format=csv"))'); // create a download link
+  
+};
