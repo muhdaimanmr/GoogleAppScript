@@ -1,0 +1,32 @@
+function listFilesInFolder() {
+  //folder ID
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  ss.setActiveSheet(ss.getSheetByName("Folder Detail")); //Sheets Name 
+  var sss = SpreadsheetApp.getActiveSheet();
+
+  var folderId = sss.getRange("C2").getValue(); //Cell with Folder ID value
+  var folder = DriveApp.getFolderById(folderId)
+  var files = folder.getFiles()
+
+  // list of files
+  var source = SpreadsheetApp.getActiveSpreadsheet();
+  source.setActiveSheet(ss.getSheetByName("List of Files")); //Sheets Name
+  var sheet = SpreadsheetApp.getActiveSheet();
+  sheet.clear();
+
+  sheet.appendRow(["Name", "URL", "Last Update", "Update By"]); //Header
+
+  var data = [];
+  while (files.hasNext()) {
+      var childFile = files.next();
+      var info = [ 
+        childFile.getName(), 
+        childFile.getUrl(),
+        childFile.getLastUpdated(),
+        Drive.Files.get(childFile.getId()).lastModifyingUser.displayName     
+      ];
+    
+    data.push(info);
+  }
+  sheet.getRange(2,1,data.length,data[0].length).setValues(data); // File location in the sheets
+}
